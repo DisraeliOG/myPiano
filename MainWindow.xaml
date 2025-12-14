@@ -1,0 +1,122 @@
+﻿<Window x:Class="myPiano.MainWindow" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,-300,0,10">
+
+            <TextBox x:Name="MelodyInput"
+                     Width="400"
+                     Height="35"
+                     FontSize="16"
+                     Margin="5"
+                     Text="C4 - A4 - A4 - G4 - A4 - F4 - C4 - C4 - C4 - A4 - A4 - Bb4 - G4 - C5 - - - C5 - D4 - D4 - Bb4 - Bb4 - A4 - G4 - F4 - F4 - A4 - A4 - G4 - A4 - F4" />
+
+            <Button Content="Play melody"
+                    Width="120"
+                    Height="35"
+                    Margin="5"
+                    Click="PlayMelody_Click"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,280,0,30">
+    
+            <Button Content="C"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+
+            <Button Content="Dm"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+
+            <Button Content="Em"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+
+            <Button Content="F"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+
+            <Button Content="G"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+
+            <Button Content="Am"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+
+            <Button Content="Bdim"
+                    Width="70" Height="40"
+                    Margin="5"
+                    Background="#FFEEEEEE"
+                    BorderBrush="#FFCCCCCC"
+                    Click="Chord_Click"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal">
+            <Button x:Name="C4" Content="C4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+            <Button x:Name="D4" Content="D4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+            <Button x:Name="E4" Content="E4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+            <Button x:Name="F4" Content="F4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+            <Button x:Name="G4" Content="G4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+            <Button x:Name="A4" Content="A4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+            <Button x:Name="B4" Content="B4" Width="50" Height="200" Background="White" Click="Note_Click"></Button>
+        </StackPanel>
+        
+        <StackPanel Orientation="Horizontal" Margin="35,0,0,80" IsHitTestVisible="True">
+            <Button x:Name="Db4" Content="C#4" Width="30" Height="120" Background="Black" Foreground="White" Click="Note_Click"></Button>
+            <Button x:Name="Eb4" Content="D#4" Width="30" Height="120" Background="Black" Foreground="White" Margin="20,0,0,0" Click="Note_Click"></Button>
+            <Button x:Name="Gb4" Content="F#4" Width="30" Height="120" Background="Black" Foreground="White" Margin="70,0,0,0" Click="Note_Click"></Button>
+            <Button x:Name="Ab4" Content="G#4" Width="30" Height="120" Background="Black" Foreground="White" Margin="20, 0,0,0" Click="Note_Click"></Button>
+            <Button x:Name="Bb4" Content="A#4" Width="30" Height="120" Background="Black" Foreground="White" Margin="20,0,0,0" Click="Note_Click"></Button>
+        </StackPanel>
+        
+        <StackPanel Orientation="Horizontal" Margin="350,0,0,0">
+            <Button x:Name="C5" Content="C5" Width="50" Height="200" Background="White" Click="Note_Click" />
+            <Button x:Name="D5" Content="D5" Width="50" Height="200" Background="White" Click="Note_Click" />
+            <Button x:Name="E5" Content="E5" Width="50" Height="200" Background="White" Click="Note_Click" />
+            <Button x:Name="F5" Content="F5" Width="50" Height="200" Background="White" Click="Note_Click" />
+            <Button x:Name="G5" Content="G5" Width="50" Height="200" Background="White" Click="Note_Click" />
+            <Button x:Name="A5" Content="A5" Width="50" Height="200" Background="White" Click="Note_Click" />
+            <Button x:Name="B5" Content="B5" Width="50" Height="200" Background="White" Click="Note_Click" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="385,0,0,80">
+            <Button x:Name="Db5" Content="C#5" Width="30" Height="120" Background="Black" Foreground="White" Click="Note_Click" />
+            <Button x:Name="Eb5" Content="D#5" Width="30" Height="120" Background="Black" Foreground="White" Margin="20,0,0,0" Click="Note_Click" />
+            <Button x:Name="Gb5" Content="F#5" Width="30" Height="120" Background="Black" Foreground="White" Margin="70,0,0,0" Click="Note_Click" />
+            <Button x:Name="Ab5" Content="G#5" Width="30" Height="120" Background="Black" Foreground="White" Margin="20,0,0,0" Click="Note_Click" />
+            <Button x:Name="Bb5" Content="A#5" Width="30" Height="120" Background="Black" Foreground="White" Margin="20,0,0,0" Click="Note_Click" />
+        </StackPanel>
+
+        
+        
+
+    </Grid>
+</Window>
