@@ -1,64 +1,95 @@
-﻿using System.Windows;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace myPiano;
 
 public partial class MainWindow : Window
 {
+    private const string AppVersion = "1.0";
+    private const string AppAuthor = "Усанков Леонид";
+
     private readonly HashSet<Key> _pressedKeys = new HashSet<Key>();
+    private readonly Brush _normalInputBackground = Brushes.White;
+    private bool _audioReady;
 
     public MainWindow()
     {
         InitializeComponent();
-        AudioManager.Initialize();
-        this.Closed += (s, e) => AudioManager.Dispose();
+
+        _audioReady = AudioManager.Initialize();
+        if (!_audioReady)
+        {
+            SetStatus(AppStatus.Error, AudioManager.LastErrorMessage);
+            MessageBox.Show(
+                AudioManager.LastErrorMessage,
+                "Ошибка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        else
+        {
+            SetStatus(AppStatus.Ready);
+        }
+
+        Closed += (s, e) => AudioManager.Dispose();
     }
 
-    private void PlayNote(string note)
+    private bool PlayNote(string note)
     {
-        AudioManager.Play(note);
+        if (!_audioReady)
+        {
+            SetStatus(AppStatus.Error, AudioManager.LastErrorMessage);
+            return false;
+        }
+
+        if (AudioManager.Play(note))
+            return true;
+
+        SetStatus(AppStatus.Error, AudioManager.LastErrorMessage);
+        return false;
     }
-    
+
     private void Note_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button button)
+        if (sender is not Button button)
+            return;
+
+        if (!PlayNote(button.Name))
+            return;
+
+        AnimatePress(button);
+
+        Task.Delay(150).ContinueWith(_ =>
         {
-            PlayNote(button.Name);
-            AnimatePress(button);
-            
-            Task.Delay(150).ContinueWith(_ =>
-            {
-                Dispatcher.Invoke(() => AnimateRelease(button));
-            });
-        }
+            Dispatcher.Invoke(() => AnimateRelease(button));
+        });
     }
-    
+
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.IsRepeat || _pressedKeys.Contains(e.Key))
+        if (SplashScreen.Visibility == Visibility.Visible || e.IsRepeat || _pressedKeys.Contains(e.Key))
             return;
-        
+
         _pressedKeys.Add(e.Key);
-        
+
         string? noteToPlay = GetNoteFromKey(e.Key);
 
-        if (noteToPlay != null)
-        {
-            PlayNote(noteToPlay);
+        if (noteToPlay == null)
+            return;
 
-            var button = this.FindName(noteToPlay) as Button;
-            if (button != null)
-            {
-                AnimatePress(button);
-            }
-        }
+        if (!PlayNote(noteToPlay))
+            return;
+
+        if (FindName(noteToPlay) is Button button)
+            AnimatePress(button);
     }
-    
+
     private void Window_KeyUp(object sender, KeyEventArgs e)
     {
         if (_pressedKeys.Contains(e.Key))
@@ -66,12 +97,8 @@ public partial class MainWindow : Window
 
         string? noteToRelease = GetNoteFromKey(e.Key);
 
-        if (noteToRelease != null)
-        {
-            var btn = FindName(noteToRelease) as Button;
-            if (btn != null)
-                AnimateRelease(btn);
-        }
+        if (noteToRelease != null && FindName(noteToRelease) is Button btn)
+            AnimateRelease(btn);
     }
 
     private string? GetNoteFromKey(Key key)
@@ -108,35 +135,38 @@ public partial class MainWindow : Window
 
     private void AnimatePress(Button btn)
     {
-        var animation = TryFindResource("PressAnimation") as ColorAnimation;
-        if (animation == null || !(btn.Background is SolidColorBrush brush)) return;
-        
+        string resourceName = IsBlackKey(btn) ? "PressBlackAnimation" : "PressAnimation";
+        var animation = TryFindResource(resourceName) as ColorAnimation;
+        if (animation == null || btn.Background is not SolidColorBrush brush)
+            return;
+
         btn.Background = new SolidColorBrush(brush.Color);
         btn.Background.BeginAnimation(SolidColorBrush.ColorProperty, animation);
     }
 
     private void AnimateRelease(Button btn)
     {
-        bool isBlackKey = (btn.Background as SolidColorBrush)?.Color == Colors.Black || 
-                          btn.Name?.Contains("b") == true || 
-                          btn.Content?.ToString()?.Contains("#") == true;
-
-        string resourceName = isBlackKey ? "ReleaseBlackAnimation" : "ReleaseAnimation";
-        
+        string resourceName = IsBlackKey(btn) ? "ReleaseBlackAnimation" : "ReleaseAnimation";
         var animation = TryFindResource(resourceName) as ColorAnimation;
-        if (animation == null || !(btn.Background is SolidColorBrush brush)) return;
+        if (animation == null || btn.Background is not SolidColorBrush brush)
+            return;
 
         btn.Background = new SolidColorBrush(brush.Color);
         btn.Background.BeginAnimation(SolidColorBrush.ColorProperty, animation);
     }
-    
+
+    private static bool IsBlackKey(Button btn)
+    {
+        return btn.Name.Contains("b") || btn.Content?.ToString()?.Contains("#") == true;
+    }
+
     private void Chord_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button btn)
             return;
 
         string? chord = btn.Content?.ToString();
-        
+
         List<string>? notes = chord switch
         {
             "C" => new() { "C4", "E4", "G4" },
@@ -151,14 +181,17 @@ public partial class MainWindow : Window
 
         if (notes == null)
             return;
-        
-        foreach (var n in notes)
-            PlayNote(n);
+
+        foreach (var note in notes)
+        {
+            if (!PlayNote(note))
+                return;
+        }
+
         HighlightKeys(notes);
         AnimateChordButton(btn);
     }
 
-    
     private async void AnimateChordButton(Button btn)
     {
         var original = btn.Background;
@@ -166,74 +199,159 @@ public partial class MainWindow : Window
         await Task.Delay(150);
         btn.Background = original;
     }
-    
+
     private async void HighlightKeys(List<string> notes)
     {
         foreach (var note in notes)
         {
-            var btn = this.FindName(note) as Button;
-            if (btn != null)
-            {
+            if (FindName(note) is Button btn)
                 AnimatePress(btn);
-            }
         }
-        
+
         await Task.Delay(200);
 
         foreach (var note in notes)
         {
-            var btn = this.FindName(note) as Button;
-            if (btn != null)
-            {
+            if (FindName(note) is Button btn)
                 AnimateRelease(btn);
-            }
         }
     }
-    
+
     private async void PlayMelody_Click(object sender, RoutedEventArgs e)
     {
         string text = MelodyInput.Text.Trim();
 
         if (string.IsNullOrWhiteSpace(text))
+        {
+            ShowInputError();
+            SetStatus(AppStatus.Error, "Введите хотя бы одну ноту");
             return;
-        
-        string[] tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        ClearInputError();
+        SetStatus(AppStatus.Playing);
+
+        string[] tokens = text.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var token in tokens)
         {
-            if (token == "|" || token == "-" || token == "_")
+            if (token == "|" || token == "-" || token == "_" || token.All(c => c == ':'))
             {
                 await Task.Delay(400);
                 continue;
             }
-            
+
             int durationFactor = token.Count(c => c == ':');
             string noteName = token.Replace(":", "");
-
             int duration = 250 + durationFactor * 200;
-            
-            PlayNoteSafely(noteName);
+
+            if (!PlayNoteSafely(noteName))
+            {
+                return;
+            }
+
             HighlightSingleKey(noteName, duration);
             await Task.Delay(duration);
         }
+
+        SetStatus(AppStatus.Success);
     }
-    
-    private void PlayNoteSafely(string note)
+
+    private bool PlayNoteSafely(string note)
     {
         try
         {
-            AudioManager.Play(note);
+            return PlayNote(note);
         }
-        catch { }
+        catch
+        {
+            SetStatus(AppStatus.Error);
+            return false;
+        }
     }
+
     private async void HighlightSingleKey(string note, int duration)
     {
-        var btn = FindName(note) as Button;
-        if (btn == null)
+        if (FindName(note) is not Button btn)
             return;
 
         AnimatePress(btn);
         await Task.Delay(duration);
         AnimateRelease(btn);
     }
+
+    private void MelodyInput_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(MelodyInput.Text))
+            ClearInputError();
+    }
+
+    private void StartButton_Click(object sender, RoutedEventArgs e)
+    {
+        SplashScreen.Visibility = Visibility.Collapsed;
+        MelodyInput.Focus();
+    }
+
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            $"Пианино\nВерсия: {AppVersion}\nРазработчик: {AppAuthor}\n\nИспользуемые технологии:\nC#\nWPF\nNAudio",
+            "О программе",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    private void Clear_Click(object sender, RoutedEventArgs e)
+    {
+        MelodyInput.Clear();
+        ClearInputError();
+        SetStatus(AppStatus.Ready);
+        MelodyInput.Focus();
+    }
+
+    private void ShowInputError()
+    {
+        MelodyInput.Background = new SolidColorBrush(Color.FromRgb(255, 226, 226));
+        InputErrorText.Visibility = Visibility.Visible;
+        MelodyInput.Focus();
+    }
+
+    private void ClearInputError()
+    {
+        MelodyInput.Background = _normalInputBackground;
+        InputErrorText.Visibility = Visibility.Collapsed;
+    }
+
+    private void SetStatus(AppStatus status, string? customMessage = null)
+    {
+        string message = customMessage ?? status switch
+        {
+            AppStatus.Ready => "Программа готова к работе",
+            AppStatus.Playing => "Выполняется воспроизведение мелодии",
+            AppStatus.Success => "Мелодия успешно воспроизведена",
+            AppStatus.Error => "Ошибка воспроизведения",
+            _ => "Программа готова к работе"
+        };
+
+        Brush color = status switch
+        {
+            AppStatus.Ready => Brushes.Gray,
+            AppStatus.Playing => Brushes.DodgerBlue,
+            AppStatus.Success => Brushes.ForestGreen,
+            AppStatus.Error => Brushes.Red,
+            _ => Brushes.Gray
+        };
+
+        StatusText.Text = message;
+        StatusText.Foreground = color;
+        StatusIndicator.Fill = color;
+    }
+}
+
+public enum AppStatus
+{
+    Ready,
+    Playing,
+    Success,
+    Error
 }

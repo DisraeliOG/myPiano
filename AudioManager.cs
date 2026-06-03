@@ -8,9 +8,10 @@ namespace myPiano
 {
     public static class AudioManager
     {
-        private static IWavePlayer _outputDevice;
-        private static MixingSampleProvider _mixer;
+        private static IWavePlayer? _outputDevice;
+        private static MixingSampleProvider? _mixer;
         private static Dictionary<string, CachedSound> _soundCache = new Dictionary<string, CachedSound>();
+        public static string LastErrorMessage { get; private set; } = string.Empty;
         
         private static readonly Dictionary<string, string> FilePaths = new Dictionary<string, string>
         {
@@ -40,8 +41,10 @@ namespace myPiano
             { "B5", "Audio/B5.mp3" }
         };
 
-        public static void Initialize()
+        public static bool Initialize()
         {
+            LastErrorMessage = string.Empty;
+
             try 
             {
                 _outputDevice = new WaveOutEvent { DesiredLatency = 200 }; 
@@ -52,6 +55,8 @@ namespace myPiano
                 _outputDevice.Init(_mixer);
                 _outputDevice.Play();
                 
+                var missingFiles = new List<string>();
+
                 foreach (var kvp in FilePaths)
                 {
                     if (File.Exists(kvp.Value))
@@ -63,30 +68,63 @@ namespace myPiano
                         catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"Не удалось загрузить {kvp.Key}: {ex.Message}");
+                            LastErrorMessage = "Не удалось загрузить звуковой файл. Проверьте наличие папки Audio.";
                         }
                     }
                     else
                     {
                         System.Diagnostics.Debug.WriteLine($"Файл не найден: {kvp.Value}");
+                        missingFiles.Add(kvp.Value);
                     }
                 }
+
+                if (missingFiles.Count > 0)
+                {
+                    LastErrorMessage = "Не удалось загрузить звуковой файл. Проверьте наличие папки Audio.";
+                    return false;
+                }
+
+                return true;
             }
             catch(Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Критическая ошибка аудио: {ex.Message}");
+                LastErrorMessage = "Ошибка воспроизведения";
+                return false;
             }
         }
 
-        public static void Play(string note)
+        public static bool Play(string note)
         {
-            if (!_soundCache.ContainsKey(note)) return;
+            if (_mixer == null)
+            {
+                LastErrorMessage = "Ошибка воспроизведения";
+                return false;
+            }
+
+            if (!_soundCache.TryGetValue(note, out var sound))
+            {
+                LastErrorMessage = "Не удалось загрузить звуковой файл. Проверьте наличие папки Audio.";
+                return false;
+            }
             
-            _mixer.AddMixerInput(new CachedSoundSampleProvider(_soundCache[note]));
+            try
+            {
+                _mixer.AddMixerInput(new CachedSoundSampleProvider(sound));
+                LastErrorMessage = string.Empty;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка воспроизведения {note}: {ex.Message}");
+                LastErrorMessage = "Ошибка воспроизведения";
+                return false;
+            }
         }
 
         public static void Dispose()
         {
-            _outputDevice.Dispose();
+            _outputDevice?.Dispose();
         }
     }
 }

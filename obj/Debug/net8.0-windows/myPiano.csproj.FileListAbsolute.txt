@@ -54,3 +54,4 @@ C:\Users\Disraeli\RiderProjects\myPiano\bin\Debug\net8.0-windows\Audio\Eb5.mp3
 C:\Users\Disraeli\RiderProjects\myPiano\bin\Debug\net8.0-windows\Audio\F5.mp3
 C:\Users\Disraeli\RiderProjects\myPiano\bin\Debug\net8.0-windows\Audio\G5.mp3
 C:\Users\Disraeli\RiderProjects\myPiano\bin\Debug\net8.0-windows\Audio\Gb5.mp3
+C:\Users\Disraeli\RiderProjects\myPiano\obj\Debug\net8.0-windows\myPiano.sourcelink.json

@@ -5,17 +5,20 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ColorAnimation x:Key="PressAnimation"
-                        To="Yellow"
+                        To="#FFFFD84D"
                         Duration="0:0:0.1"
                         AutoReverse="False"/>
 
-        <!-- Анимация возврата цвета -->
+        <ColorAnimation x:Key="PressBlackAnimation"
+                        To="#FF4169E1"
+                        Duration="0:0:0.1"
+                        AutoReverse="False"/>
+        
         <ColorAnimation x:Key="ReleaseAnimation"
                         To="White"
                         Duration="0:0:0.15"
                         AutoReverse="False"/>
-
-        <!-- Анимация для чёрных клавиш -->
+        
         <ColorAnimation x:Key="ReleaseBlackAnimation"
                         To="Black"
                         Duration="0:0:0.15"
